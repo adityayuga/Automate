@@ -1,46 +1,57 @@
 import os
 import sys
+import json
 import getpass
 
 
+# load configuration file
+def load_config():
+    data = {}
+    with open('config.json') as json_data_file:
+        data = json.load(json_data_file)
+    return data
+
+
 # define for global variable
-base_path = '/var/www/'
-default_os_user = 'ss'
-default_os_group = 'ss'
+config = {}
+config = load_config()
 
 
 # download laravel from the source
 # create project based input name given
 def download_laravel(name):
-    path = base_path + name
+    path = config['others']['base_path'] + name
     composer_command = 'composer create-project --prefer-dist laravel/laravel'
     cmd = '%s %s' % (composer_command, path)
     os.system(cmd)
 
 
 # normalize input string
-def normalize_input_string(str):
+def normalize_input_string(string):
     # change space with underscore
-    str.replace(' ', '_')
+    string.replace(' ', '_')
     # lowering case
-    str.lower()
+    string.lower()
 
-    return str
+    return string
 
 
 # validate project name
 def validate_project_name(name):
+    # check if empty
+    if name == ' ':
+        return False
     # check name already exist or not
-    if os.path.exists(base_path + name):
+    if os.path.exists(config['others']['base_path'] + name):
         return False
 
     return True
 
 
 # set permission for project directory
-def set_project_permission(name, user, group):
+def set_permission(name, user, group):
     # set write rule
-    project_path = base_path + name
+    project_path = config['others']['base_path'] + name
     storage_path = project_path + '/storage'
     chmod_command = 'chmod -R 775'
     chown_command = 'chown -R %s:%s' % (user, group)
@@ -52,7 +63,7 @@ def set_project_permission(name, user, group):
 
 # set env file laravel
 def set_env_file(project_name, db_name, db_user, db_password):
-    project_path = base_path + project_name
+    project_path = config['others']['base_path'] + project_name
     env_example_path = project_path + '/.env.example'
     env_path = project_path + '/.env'
     env_example_file = open(env_example_path, 'r')
@@ -77,6 +88,7 @@ def set_env_file(project_name, db_name, db_user, db_password):
 
 # get input name of the project
 def ask_project_name():
+    name = None
     name = input('Enter project name: ')
     name = normalize_input_string(name)
     return name
@@ -84,6 +96,7 @@ def ask_project_name():
 
 # get input name of the database
 def ask_database_name():
+    name = None
     name = input('Enter database name: ')
     name = normalize_input_string(name)
     return name
@@ -91,6 +104,7 @@ def ask_database_name():
 
 # get input name of the database user
 def ask_database_user():
+    user = None
     user = input('Enter database user: ')
     user = normalize_input_string(user)
     return user
@@ -102,7 +116,6 @@ def ask_database_password():
 
 
 # run
-os.system('sudo su')
 # ask project name and other credential
 project_name = ask_project_name()
 db_name = ask_database_name()
@@ -111,15 +124,13 @@ db_password = ask_database_password()
 
 # validate project name, if fail, print error
 if not validate_project_name(project_name):
-    os.system('exit')
     sys.exit()
 
 # install laravel
 download_laravel(project_name)
 # setting permission on laravel project folder
-set_project_permission(project_name, default_os_user, default_os_group)
+set_permission(project_name, config['os']['user'], config['os']['group'])
 # setting env file
 set_env_file(project_name, db_name, db_user, db_password)
 
 # end
-os.system('exit')

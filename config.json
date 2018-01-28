@@ -1,0 +1,9 @@
+{
+   "os":{
+      "user":"ss",
+      "group":"ss"
+   },
+   "others":{
+      "base_path":"/var/www/"
+   }
+}
